@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>REST Countries API - Using then()</title>
+  <title>REST Countries API</title>
 
   <style>
     body {
@@ -19,7 +19,7 @@
 
     button {
       display: block;
-      margin: 15px auto 30px;
+      margin: 15px auto;
       padding: 12px 22px;
       font-size: 16px;
       border: none;
@@ -27,6 +27,20 @@
       background-color: #2563eb;
       color: white;
       cursor: pointer;
+    }
+
+    .search-box {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    select, input {
+      padding: 10px;
+      font-size: 14px;
+      margin: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      width: 200px;
     }
 
     #container {
@@ -43,7 +57,6 @@
       border-radius: 12px;
       padding: 15px;
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-      cursor: pointer;
     }
 
     img {
@@ -61,46 +74,77 @@
 
   <button id="btn">Load Countries</button>
 
+  <div class="search-box">
+    <select id="searchType">
+      <option value="name">Name</option>
+      <option value="capital">Capital</option>
+      <option value="region">Continent</option>
+      <option value="code">Country Code</option>
+    </select>
+
+    <input type="text" id="searchInput" placeholder="Search..." />
+  </div>
+
   <div id="container"></div>
 
   <script>
     const button = document.getElementById("btn");
     const container = document.getElementById("container");
+    const searchInput = document.getElementById("searchInput");
+    const searchType = document.getElementById("searchType");
+
+    let allCountries = [];
 
     button.addEventListener("click", function () {
-
-      fetch("https://restcountries.com/v3.1/all?fields=name,capital,flags,region,population")
-        .then(function (response) {
-          return response.json();  
+      fetch("https://restcountries.com/v3.1/all?fields=name,capital,flags,region,population,cca2")
+        .then(res => res.json())
+        .then(data => {
+          allCountries = data;
+          displayCountries(allCountries);
         })
-        .then(function (countries) {
+        .catch(err => console.log(err));
+    });
 
-          container.innerHTML = "";
+    function displayCountries(countries) {
+      container.innerHTML = "";
 
-          countries.forEach(function (country) {
+      countries.forEach(country => {
+        const capital = country.capital ? country.capital.join(", ") : "N/A";
+        const region = country.region || "N/A";
 
-            const div = document.createElement("div");
-            div.className = "country";
+        const div = document.createElement("div");
+        div.className = "country";
 
-            div.innerHTML = `
-              <h3>${country.name.common}</h3>
-              <img src="${country.flags.png}">
-              <p><b>Capital:</b> ${country.capital ? country.capital[0] : "N/A"}</p>
-              <p><b>Region:</b> ${country.region}</p>
-              <p><b>Population:</b> ${country.population}</p>
-            `;
+        div.innerHTML = `
+          <h3>${country.name.common}</h3>
+          <img src="${country.flags.png}">
+          <p><b>Capital:</b> ${capital}</p>
+          <p><b>Region:</b> ${region}</p>
+          <p><b>Country Code:</b> ${country.cca2}</p>
+          <p><b>Population:</b> ${country.population.toLocaleString()}</p>
+        `;
 
-            div.addEventListener("click", function () {
-              alert("Country: " + country.name.common);
-            });
+        container.appendChild(div);
+      });
+    }
 
-            container.appendChild(div);
-          });
-        })
-        .catch(function (error) {
-          console.log("Error:", error);
-        });
+    searchInput.addEventListener("keyup", function () {
+      const value = searchInput.value.toLowerCase().trim();
+      const type = searchType.value;
 
+      const filtered = allCountries.filter(country => {
+        const name = country.name.common.toLowerCase();
+        const capital = country.capital ? country.capital.join(" ").toLowerCase() : "";
+        const region = country.region ? country.region.toLowerCase() : "";
+        const code = country.cca2 ? country.cca2.toLowerCase() : "";
+
+        if (type === "name") return name.includes(value);
+        if (type === "capital") return capital.includes(value);
+        if (type === "region") return region.includes(value);
+        if (type === "code") return code.includes(value);
+      });
+
+      displayCountries(filtered);
     });
   </script>
 
